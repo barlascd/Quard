@@ -1,5 +1,5 @@
 # Quard
-![Uploading image.png…]()
+
 
 
 A small zero-trust decision gateway: a Rust HTTP service receives a security
@@ -96,3 +96,5 @@ following. All are under permissive licenses compatible with Apache-2.0.
   ONNX (Apache-2.0); ONNX Runtime, FastAPI, z3-solver (MIT).
 * **C++**: Eigen (MPL-2.0, file-level copyleft; fine as long as you don't modify
   Eigen's own files, or you publish those modifications), Google Benchmark (Apache-2.0).
+  <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/2ec78f4a-4809-4d31-af8e-267145b91900" />
+
