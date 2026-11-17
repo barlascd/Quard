@@ -1,4 +1,5 @@
 # Quard
+![Uploading Kuantum Güvenlik Kalkanı Logo Tasarımı.png…]()
 
 A small zero-trust decision gateway: a Rust HTTP service receives a security
 event, asks a Python/ONNX model for a risk score, applies a policy
