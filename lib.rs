@@ -7,5 +7,6 @@ pub mod crypto;
 pub mod identity;
 pub mod isolation;
 pub mod models;
+pub mod pqc;
 pub mod policy;
 pub mod validation;

@@ -25,3 +25,17 @@ pub fn evaluate(authenticated: bool, authorized: bool, risk_score: f32) -> Decis
         Decision::Allow
     }
 }
+
+/// Same as [`evaluate`], but additionally requires a valid post-quantum
+/// signature on the request. Mirrors `verification/z3/pqc_policy.py`.
+pub fn evaluate_signed(
+    authenticated: bool,
+    authorized: bool,
+    signature_valid: bool,
+    risk_score: f32,
+) -> Decision {
+    if !signature_valid {
+        return Decision::Deny;
+    }
+    evaluate(authenticated, authorized, risk_score)
+}

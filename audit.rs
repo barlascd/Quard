@@ -8,6 +8,8 @@ use std::{
 };
 use tokio::sync::Mutex;
 
+use crate::pqc::signature::{self, PqSigner};
+
 pub const GENESIS: &str = "GENESIS";
 
 /// Append-only, hash-chained JSONL audit log.
@@ -15,6 +17,8 @@ pub const GENESIS: &str = "GENESIS";
 pub struct AuditLog {
     path: String,
     previous_hash: Arc<Mutex<String>>,
+    /// When set, every record's hash is signed with ML-DSA-65.
+    signer: Option<Arc<PqSigner>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -26,6 +30,9 @@ struct AuditRecord {
     risk_score: f32,
     previous_hash: String,
     record_hash: String,
+    /// Hex ML-DSA-65 signature over `record_hash`. Absent when signing is off.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    signature: Option<String>,
 }
 
 /// Hash over a JSON array, so delimiter characters inside fields cannot
@@ -48,6 +55,11 @@ impl AuditLog {
     /// Opens the log. If the file already exists, the chain continues from
     /// its last record so restarts do not break it.
     pub fn new(path: String) -> anyhow::Result<Self> {
+        Self::with_signer(path, None)
+    }
+
+    /// Like [`AuditLog::new`], but signs every new record with `signer`.
+    pub fn with_signer(path: String, signer: Option<Arc<PqSigner>>) -> anyhow::Result<Self> {
         let mut last = GENESIS.to_string();
         if Path::new(&path).exists() {
             let reader = BufReader::new(File::open(&path)?);
@@ -64,6 +76,7 @@ impl AuditLog {
         Ok(Self {
             path,
             previous_hash: Arc::new(Mutex::new(last)),
+            signer,
         })
     }
 
@@ -80,6 +93,10 @@ impl AuditLog {
             .as_secs();
 
         let hash = record_hash(timestamp, event_id, user_id, decision, risk_score, &previous);
+        let signature = self
+            .signer
+            .as_ref()
+            .map(|s| hex::encode(s.sign(hash.as_bytes())));
         let record = AuditRecord {
             timestamp,
             event_id: event_id.to_string(),
@@ -88,6 +105,7 @@ impl AuditLog {
             risk_score,
             previous_hash: previous.clone(),
             record_hash: hash.clone(),
+            signature,
         };
 
         let path = Path::new(&self.path);
@@ -128,6 +146,30 @@ pub fn verify_chain(path: &str) -> anyhow::Result<usize> {
         }
         previous = r.record_hash;
         count += 1;
+    }
+    Ok(count)
+}
+
+/// Verifies the hash chain *and* the ML-DSA-65 signature on every record.
+/// Fails if any record is unsigned or signed by a different key.
+pub fn verify_signed_chain(path: &str, public_key: &[u8]) -> anyhow::Result<usize> {
+    let count = verify_chain(path)?;
+    let reader = BufReader::new(File::open(path)?);
+    let mut n = 0;
+    for line in reader.lines() {
+        let line = line?;
+        if line.trim().is_empty() {
+            continue;
+        }
+        n += 1;
+        let r: AuditRecord = serde_json::from_str(&line)?;
+        let sig = match r.signature {
+            Some(s) => hex::decode(s)?,
+            None => anyhow::bail!("Record {n} is not signed"),
+        };
+        if !signature::verify(public_key, r.record_hash.as_bytes(), &sig) {
+            anyhow::bail!("Invalid signature on record {n}");
+        }
     }
     Ok(count)
 }

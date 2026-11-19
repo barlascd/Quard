@@ -7,6 +7,8 @@ pub struct Config {
     pub ai_url: String,
     pub audit_path: String,
     pub authorized_users: Vec<String>,
+    /// Optional path of the ML-DSA-65 audit signing key (created if missing).
+    pub pqc_key_path: Option<String>,
 }
 
 impl Config {
@@ -33,6 +35,7 @@ impl Config {
             audit_path: env::var("QS_AUDIT_PATH")
                 .unwrap_or_else(|_| "logs/audit.jsonl".into()),
             authorized_users,
+            pqc_key_path: env::var("QS_PQC_KEY_PATH").ok().filter(|p| !p.is_empty()),
         })
     }
 }
