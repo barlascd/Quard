@@ -1,24 +1,25 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from ai.inference import predict
+from ai.inference import QuardAI
 
-app = FastAPI(title="Quard AI service")
+app = FastAPI(title="Quard AI Engine")
+ai = QuardAI()
 
 
-class SecurityInput(BaseModel):
+class SecurityRequest(BaseModel):
     features: list[float] = Field(min_length=4, max_length=4)
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "running", "engine": "QUARD AI"}
 
 
 @app.post("/predict")
-def analyze(data: SecurityInput):
+def predict(request: SecurityRequest):
     try:
-        return {"risk_score": predict(data.features)}
+        return {"risk_score": ai.predict(request.features)}
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
     except FileNotFoundError:

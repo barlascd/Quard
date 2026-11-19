@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(QUARD_BUILD_BENCHMARKS "Build Google Benchmark targets" OFF)
+option(QUARD_BUILD_PQC_TESTS "Build ML-KEM test (needs liboqs)" OFF)
 
 find_package(Eigen3 REQUIRED)
 
@@ -21,4 +22,11 @@ if(QUARD_BUILD_BENCHMARKS)
     find_package(benchmark REQUIRED)
     add_executable(quard_benchmark cpp/benchmark.cpp)
     target_link_libraries(quard_benchmark PRIVATE math_engine benchmark::benchmark)
+endif()
+
+if(QUARD_BUILD_PQC_TESTS)
+    find_package(liboqs REQUIRED)
+    add_executable(kem_test cpp/kem_test.cpp)
+    target_link_libraries(kem_test PRIVATE OQS::oqs)
+    add_test(NAME kem_test COMMAND kem_test)
 endif()
