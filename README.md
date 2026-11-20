@@ -132,3 +132,5 @@ following. All are under permissive licenses compatible with the MIT license.
   ONNX (Apache-2.0); ONNX Runtime, FastAPI, z3-solver (MIT).
 * **C++**: liboqs (MIT, with some Apache-2.0/CC0 components; test-only); Eigen (MPL-2.0, file-level copyleft; fine as long as you don't modify
   Eigen's own files, or you publish those modifications), Google Benchmark (Apache-2.0).
+  <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/2e8ede27-4bf7-4ba8-9f19-cd8db0f6a7d4" />
+
