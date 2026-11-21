@@ -120,7 +120,7 @@ Lean (`lean verification/lean/Theorem.lean`) and Verus
 ## License
 
 Licensed under the [MIT License](LICENSE).
-Copyright (c) 2026 [YOUR NAME].
+Copyright (c) 2026 [barlascd].
 
 ### Third-party software
 
