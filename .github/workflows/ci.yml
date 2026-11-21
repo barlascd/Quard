@@ -55,8 +55,8 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - run: curl -sL -o tla2tools.jar https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar
-      - run: java -cp tla2tools.jar tlc2.TLC -config system.cfg system.tla
+      - run: curl -fsSL -o tla2tools.jar https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar
+      - run: java -cp "${{ github.workspace }}/tla2tools.jar" tlc2.TLC -config system.cfg system.tla
         working-directory: verification/tla
 
   cpp-pqc:
