@@ -1,0 +1,25 @@
+# Rust
+/target/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Generated artifacts (rebuild with the commands in README.md)
+/models/*
+!/models/.gitkeep
+/logs/
+security_data.csv
+
+# C++
+/build/
+
+# TLC
+/verification/tla/states/
+
+# Secrets / local config  (NEVER commit signing keys)
+.env
+*_key.hex
+/keys/

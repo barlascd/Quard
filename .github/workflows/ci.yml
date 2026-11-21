@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:   # lets you press "Run workflow" in the Actions tab
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --all-targets
+      - run: cargo test --all-targets
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+      - name: Build model (train -> ONNX -> int8)
+        run: |
+          python -m ai.train
+          python -m ai.export_model
+          python -m ai.quantize
+          python -m ai.evaluate
+      - run: python -m pytest -q
+      - run: python verification/z3/policy.py
+      - run: python verification/z3/pqc_policy.py
+
+  cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y cmake libeigen3-dev libbenchmark-dev
+      - run: cmake -S . -B build -DQUARD_BUILD_BENCHMARKS=ON
+      - run: cmake --build build -j
+      - run: ctest --test-dir build --output-on-failure
+
+  tla:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: curl -sL -o tla2tools.jar https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar
+      - run: java -cp tla2tools.jar tlc2.TLC -config system.cfg system.tla
+        working-directory: verification/tla
+
+  cpp-pqc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y cmake
+      - name: Build liboqs (ML-KEM-768 only)
+        run: |
+          curl -sL https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.12.0.tar.gz | tar xz
+          cmake -S liboqs-0.12.0 -B liboqs-build -DCMAKE_INSTALL_PREFIX=$HOME/oqs \
+            -DOQS_USE_OPENSSL=OFF -DOQS_BUILD_ONLY_LIB=ON \
+            -DOQS_MINIMAL_BUILD="KEM_ml_kem_768" -DBUILD_SHARED_LIBS=OFF
+          cmake --build liboqs-build -j && cmake --install liboqs-build
+      - run: sudo apt-get install -y libeigen3-dev
+      - run: cmake -S . -B build -DQUARD_BUILD_PQC_TESTS=ON -DCMAKE_PREFIX_PATH=$HOME/oqs
+      - run: cmake --build build -j
+      - run: ctest --test-dir build --output-on-failure
